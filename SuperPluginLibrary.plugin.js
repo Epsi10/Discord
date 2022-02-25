@@ -4,10 +4,10 @@
  * @invite 9DmhGdydmf
  * @authorLink https://t.me/Marlodor96
  * @website https://github.com/Marlodor96/Discord
- * @source https://raw.githubusercontent.com/Marlodor96/Discord/master/release/SuperPluginLibrary.plugin.js
+ * @source https://github.com/Marlodor96/Discord/releases/download/Discord/SuperPluginLibrary.plugin.js
  */
 
-@cc_on
+/*@cc_on
 @if (@_jscript)
     
     // Offer to self-install for clueless users that try to run this directly.
@@ -29,7 +29,7 @@
     }
     WScript.Quit();
 
-@else@
+@else@*/
 module.exports =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -138,7 +138,7 @@ module.exports = {
         version: "1.2.33",
         description: "Gives other plugins utility functions and the ability to emulate v2.",
         github: "https://github.com/Marlodor96/Discord",
-        github_raw: "https://raw.githubusercontent.com/Marlodor96/Discord/master/release/SuperPluginLibrary.plugin.js"
+        github_raw: "https://github.com/Marlodor96/Discord/releases/download/Discord/SuperPluginLibrary.plugin.js"
     },
     changelog: [
         {
