@@ -133,12 +133,12 @@ module.exports = {
             name: "Marlodor96IT",
             discord_id: "Unknown",
             github_username: "Marlodor96",
-            Telegram_username: "Marlodor96"
+            telegram_username: "Marlodor96"
         }],
-        version: "1.2.33",
+        version: "Latest",
         description: "Gives other plugins utility functions and the ability to emulate v2.",
-        github: "https://github.com/Marlodor96/Discord",
-        github_raw: "https://github.com/Marlodor96/Discord/releases/download/Discord/SuperPluginLibrary.plugin.js"
+        github: "https://github.com/Marlodor96/Discord/releases/download/Discord/SuperPluginLibrary",
+        github_raw: "https://github.com/Marlodor96/Discord/releases/download/Discord/SuperPluginLibrary"
     },
     changelog: [
         {
@@ -2105,8 +2105,261 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _discordclasses__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./discordclasses */ "./src/modules/discordclasses.js");
 /* harmony import */ var ui__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ui */ "./src/ui/ui.js");
 /* harmony import */ var _styles_updates_css__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../styles/updates.css */ "./src/styles/updates.css");
+/**
+ * Functions that check for and update existing plugins.
+ * @module PluginUpdater
+ * @version 0.1.2
+ */
 
- 
+
+
+
+
+
+
+
+
+/**
+ * Function that gets the remote version from the file contents.
+ * @param {string} fileContent - the content of the remote file
+ * @returns {string} - remote version
+ * @callback module:PluginUpdater~versioner
+ */
+
+/**
+ * Comparator that takes the current version and the remote version,
+ * then compares them returning `true` if there is an update and `false` otherwise.
+ * @param {string} currentVersion - the current version of the plugin
+ * @param {string} remoteVersion - the remote version of the plugin
+ * @returns {boolean} - whether the plugin has an update or not
+ * @callback module:PluginUpdater~comparator
+ */
+
+class PluginUpdater {
+
+    static get CSS() {return _styles_updates_css__WEBPACK_IMPORTED_MODULE_5__["default"];}
+
+    /**
+     * Checks for updates for the specified plugin at the specified link. The final
+     * parameter should link to the raw text of the plugin and will compare semantic
+     * versions.
+     * @param {string} pluginName - name of the plugin
+     * @param {string} currentVersion - current version (semantic versioning only)
+     * @param {string} updateURL - url to check for update
+     * @param {module:PluginUpdater~versioner} [versioner] - versioner that finds the remote version. If not provided uses {@link module:PluginUpdater.defaultVersioner}.
+     * @param {module:PluginUpdater~comparator} [comparator] - comparator that determines if there is an update. If not provided uses {@link module:PluginUpdater.defaultComparator}.
+     */
+    static checkForUpdate(pluginName, currentVersion, updateURL, versioner, comparator) {
+        let updateLink = "https://raw.githubusercontent.com/rauenzi/BetterDiscordAddons/master/Plugins/" + pluginName + "/" + pluginName + ".plugin.js";
+        if (updateURL) updateLink = updateURL;
+        if (typeof(versioner) != "function") versioner = this.defaultVersioner;
+        if (typeof(comparator) != "function") comparator = this.defaultComparator;
+
+        if (typeof window.PluginUpdates === "undefined") {
+            window.PluginUpdates = {
+                plugins: {},
+                checkAll: async function() {
+                    for (const key in this.plugins) {
+                        const plugin = this.plugins[key];
+                        if (!plugin.versioner) plugin.versioner = PluginUpdater.defaultVersioner;
+                        if (!plugin.comparator) plugin.comparator = PluginUpdater.defaultComparator;
+                        await PluginUpdater.processUpdateCheck(plugin.name, plugin.raw);
+                    }
+                },
+                interval: setInterval(() => {
+                    window.PluginUpdates.checkAll();
+                }, 7200000)
+            };
+            this.patchPluginList();
+        }
+
+        window.PluginUpdates.plugins[updateLink] = {name: pluginName, raw: updateLink, version: currentVersion, versioner: versioner, comparator: comparator};
+        PluginUpdater.processUpdateCheck(pluginName, updateLink);
+    }
+
+    /**
+     * Will check for updates and automatically show or remove the update notice
+     * bar based on the internal result. Better not to call this directly and to
+     * instead use {@link module:PluginUpdater.checkForUpdate}.
+     * @param {string} pluginName - name of the plugin to check
+     * @param {string} updateLink - link to the raw text version of the plugin
+     */
+    static async processUpdateCheck(pluginName, updateLink) {
+        return new Promise(resolve => {
+            const request = require("request");
+            request(updateLink, (error, response, result) => {
+                if (error || response.statusCode !== 200) return resolve();
+                const remoteVersion = window.PluginUpdates.plugins[updateLink].versioner(result);
+                const hasUpdate = window.PluginUpdates.plugins[updateLink].comparator(window.PluginUpdates.plugins[updateLink].version, remoteVersion);
+                if (hasUpdate) resolve(this.showUpdateNotice(pluginName, updateLink));
+                else resolve(this.removeUpdateNotice(pluginName));
+            });
+        });
+    }
+
+    /**
+     * The default versioner used as {@link module:PluginUpdater~versioner} for {@link module:PluginUpdater.checkForUpdate}.
+     * This works on basic semantic versioning e.g. "1.0.0". You do not need to provide this as a versioner if your plugin adheres
+     * to this style as this will be used as default.
+     * @param {string} currentVersion
+     * @param {string} content
+     */
+    static defaultVersioner(content) {
+        const remoteVersion = content.match(/['"][0-9]+\.[0-9]+\.[0-9]+['"]/i);
+        if (!remoteVersion) return "0.0.0";
+        return remoteVersion.toString().replace(/['"]/g, "");
+    }
+
+    /**
+     * The default comparator used as {@link module:PluginUpdater~comparator} for {@link module:PluginUpdater.checkForUpdate}.
+     * This works on basic semantic versioning e.g. "1.0.0". You do not need to provide this as a comparator if your plugin adheres
+     * to this style as this will be used as default.
+     * @param {string} currentVersion
+     * @param {string} content
+     */
+    static defaultComparator(currentVersion, remoteVersion) {
+        currentVersion = currentVersion.split(".").map((e) => {return parseInt(e);});
+        remoteVersion = remoteVersion.split(".").map((e) => {return parseInt(e);});
+
+        if (remoteVersion[0] > currentVersion[0]) return true;
+        else if (remoteVersion[0] == currentVersion[0] && remoteVersion[1] > currentVersion[1]) return true;
+        else if (remoteVersion[0] == currentVersion[0] && remoteVersion[1] == currentVersion[1] && remoteVersion[2] > currentVersion[2]) return true;
+        return false;
+    }
+
+    static patchPluginList() {
+        _domtools__WEBPACK_IMPORTED_MODULE_1__["default"].observer.subscribeToQuerySelector(mutation => {
+            if (!mutation.addedNodes || !mutation.addedNodes.length) return;
+            const button = document.getElementsByClassName("bd-pfbtn")[0];
+            if (!button || !button.textContent.toLowerCase().includes("plugin") || button.nextElementSibling.classList.contains("bd-updatebtn")) return;
+            button.after(PluginUpdater.createUpdateButton());
+        }, "#bd-settingspane-container");
+    }
+
+    /**
+     * Creates the update button found in the plugins page of BetterDiscord
+     * settings. Returned button will already have listeners to create the tooltip.
+     * @returns {HTMLElement} check for update button
+     */
+    static createUpdateButton() {
+        const updateButton = _domtools__WEBPACK_IMPORTED_MODULE_1__["default"].parseHTML(`<button class="bd-pfbtn bd-updatebtn" style="left: 220px;">Check for Updates</button>`);
+        updateButton.onclick = function () {
+            ui__WEBPACK_IMPORTED_MODULE_4__["Toasts"].info("Plugin update check in progress.");
+            window.PluginUpdates.checkAll().then(() => {ui__WEBPACK_IMPORTED_MODULE_4__["Toasts"].success("Plugin update check complete.");});
+        };
+        const tooltip = new ui__WEBPACK_IMPORTED_MODULE_4__["Tooltip"](updateButton, "Checks for updates of plugins that support this feature. Right-click for a list.");
+        updateButton.oncontextmenu = function () {
+            if (!window.PluginUpdates || !window.PluginUpdates.plugins) return;
+            tooltip.label = Object.values(window.PluginUpdates.plugins).map(p => p.name).join(", ");
+            tooltip.side = "bottom";
+            tooltip.show();
+            updateButton.onmouseout = function() {
+                tooltip.label = "Checks for updates of plugins that support this feature. Right-click for a list.";
+                tooltip.side = "top";
+            };
+        };
+        return updateButton;
+    }
+
+    /**
+     * Will download the latest version and replace the the old plugin version.
+     * Will also update the button in the update bar depending on if the user
+     * is using RestartNoMore plugin by square {@link https://github.com/Inve1951/BetterDiscordStuff/blob/master/plugins/restartNoMore.plugin.js}
+     * @param {string} pluginName - name of the plugin to download
+     * @param {string} updateLink - link to the raw text version of the plugin
+     */
+    static downloadPlugin(pluginName, updateLink) {
+        const request = require("request");
+        const fileSystem = require("fs");
+        const path = require("path");
+        request(updateLink, async (error, response, body) => {
+            if (error) return _logger__WEBPACK_IMPORTED_MODULE_2__["default"].warn("PluginUpdates", "Unable to get update for " + pluginName);
+            const remoteVersion = window.PluginUpdates.plugins[updateLink].versioner(body);
+            let filename = updateLink.split("/");
+            filename = filename[filename.length - 1];
+            const file = path.join(_pluginutilities__WEBPACK_IMPORTED_MODULE_0__["default"].getPluginsFolder(), filename);
+            await new Promise(r => fileSystem.writeFile(file, body, r));
+            ui__WEBPACK_IMPORTED_MODULE_4__["Toasts"].success(`${pluginName} ${window.PluginUpdates.plugins[updateLink].version} has been replaced by ${pluginName} ${remoteVersion}`);
+            this.removeUpdateNotice(pluginName);
+
+            if (BdApi.isSettingEnabled("fork-ps-5")) return;
+            if (!window.PluginUpdates.downloaded) {
+                window.PluginUpdates.downloaded = [];
+                const button = _domtools__WEBPACK_IMPORTED_MODULE_1__["default"].parseHTML(`<button class="btn btn-reload ${_discordclasses__WEBPACK_IMPORTED_MODULE_3__["default"].Notices.buttonMinor} ${_discordclasses__WEBPACK_IMPORTED_MODULE_3__["default"].Notices.button}">Reload</button>`);
+                const tooltip = new ui__WEBPACK_IMPORTED_MODULE_4__["Tooltip"](button, window.PluginUpdates.downloaded.join(", "), {side: "top"});
+                button.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    window.location.reload(false);
+                });
+                button.addEventListener("mouseenter", () => {
+                    tooltip.label = window.PluginUpdates.downloaded.join(", ");
+                });
+                document.getElementById("pluginNotice").append(button);
+            }
+            window.PluginUpdates.plugins[updateLink].version = remoteVersion;
+            window.PluginUpdates.downloaded.push(pluginName);
+        });
+    }
+
+    /**
+     * Will show the update notice top bar seen in Discord. Better not to call
+     * this directly and to instead use {@link module:PluginUpdater.checkForUpdate}.
+     * @param {string} pluginName - name of the plugin
+     * @param {string} updateLink - link to the raw text version of the plugin
+     */
+    static showUpdateNotice(pluginName, updateLink) {
+        if (!document.getElementById("pluginNotice")) {
+            const noticeElement = _domtools__WEBPACK_IMPORTED_MODULE_1__["default"].parseHTML(`<div class="${_discordclasses__WEBPACK_IMPORTED_MODULE_3__["default"].Notices.notice} ${_discordclasses__WEBPACK_IMPORTED_MODULE_3__["default"].Notices.colorInfo}" id="pluginNotice">
+                                                        <div class="${_discordclasses__WEBPACK_IMPORTED_MODULE_3__["default"].Notices.closeButton}" id="pluginNoticeDismiss"></div>
+                                                        <span class="notice-message">The following plugins have updates:</span>&nbsp;&nbsp;<strong id="outdatedPlugins"></strong>
+                                                    </div>`);
+            _domtools__WEBPACK_IMPORTED_MODULE_1__["default"].query("[class*='app-'] > [class*='app-']").prepend(noticeElement);
+            noticeElement.querySelector("#pluginNoticeDismiss").addEventListener("click", async () => {
+                noticeElement.classList.add("closing");
+                await new Promise(resolve => setTimeout(resolve, 400));
+                noticeElement.remove();
+            });
+        }
+        const pluginNoticeID = pluginName + "-notice";
+        if (document.getElementById(pluginNoticeID)) return;
+        const pluginNoticeElement = _domtools__WEBPACK_IMPORTED_MODULE_1__["default"].parseHTML(`<span id="${pluginNoticeID}">${pluginName}</span>`);
+        pluginNoticeElement.addEventListener("click", () => {
+            this.downloadPlugin(pluginName, updateLink);
+        });
+        if (document.getElementById("outdatedPlugins").querySelectorAll("span").length) document.getElementById("outdatedPlugins").append(_domtools__WEBPACK_IMPORTED_MODULE_1__["default"].createElement("<span class='separator'>, </span>"));
+        document.getElementById("outdatedPlugins").append(pluginNoticeElement);
+
+        const tooltip = new ui__WEBPACK_IMPORTED_MODULE_4__["Tooltip"](pluginNoticeElement, "Click To Update!", {side: "bottom"});
+
+        // If this is the first one added, show the tooltip immediately.
+        if (document.getElementById("outdatedPlugins").querySelectorAll("span").length === 1) tooltip.show();
+    }
+
+    /**
+     * Will remove the plugin from the update notice top bar seen in Discord.
+     * Better not to call this directly and to instead use {@link module:PluginUpdater.checkForUpdate}.
+     * @param {string} pluginName - name of the plugin
+     */
+    static removeUpdateNotice(pluginName) {
+        if (!document.getElementById("outdatedPlugins")) return;
+        const notice = document.getElementById(pluginName + "-notice");
+        if (notice) {
+            if (notice.nextElementSibling && notice.nextElementSibling.matches(".separator")) notice.nextElementSibling.remove();
+            else if (notice.previousElementSibling && notice.previousElementSibling.matches(".separator")) notice.previousElementSibling.remove();
+            notice.remove();
+        }
+
+        
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/modules/pluginutilities.js":
+/*!****************************************!*\
+  !*** ./src/modules/pluginutilities.js ***!
+  \****************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -3811,7 +4064,7 @@ __webpack_require__.r(__webpack_exports__);
             const list = BdApi.Plugins.getAll().reduce((acc, val) => {
                 if (!val._config) return acc;
                 const name = val.getName();
-                if (name === "ZeresPluginLibrary") return acc;
+                if (name === "SuperPluginLibrary") return acc;
                 acc.push(name);
                 return acc;
             }, []);
@@ -3849,7 +4102,7 @@ __webpack_require__.r(__webpack_exports__);
     Library.buildPlugin = PluginLibrary.buildPlugin;
     window.ZLibrary = Library;
     window.ZLibraryPromise = new Promise(r => setImmediate(r));
-    window.ZeresPluginLibrary = PluginLibrary;
+    window.SuperPluginLibrary = PluginLibrary;
     return PluginLibrary;
 });
 
@@ -7108,7 +7361,7 @@ class DiscordContextMenu {
     static async getDiscordMenu() {
         _modules_logger__WEBPACK_IMPORTED_MODULE_7__["default"].warn("DiscordContextMenu", "This function no longer applies, please update your plugin.");
         // return new Promise(resolve => {
-        //     const cancel = Patcher.after("ZeresLibrary.DiscordContextMenu", ContextMenuActions, "openContextMenu", (_, [, component]) => {
+        //     const cancel = Patcher.after("SuperLibrary.DiscordContextMenu", ContextMenuActions, "openContextMenu", (_, [, component]) => {
         //         const rendered = component();
         //         const menuType = rendered.props && rendered.props.type || (rendered.type && rendered.type.displayName);
         //         if (!menuType || typeof(menuType) != "string" || !menuType.includes(type)) return;
@@ -7520,7 +7773,7 @@ class Popouts {
                     channelId: channel
                 }));
             }
-        }, "ZeresLibrary");
+        }, "SuperLibrary");
     }
 }
 
