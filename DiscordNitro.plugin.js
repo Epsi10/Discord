@@ -1,10 +1,10 @@
 /**
  * @name DiscordNitro
  * @website https://github.com/Marlodor96/Discord
- * @source https://raw.githubusercontent.com/Marlodor96/Discord/master/release/SuperPluginLibrary.plugin.js
- * @updateUrl https://raw.githubusercontent.com/Marlodor96/Discord/master/release/SuperPluginLibrary.plugin.js
+ * @source https://github.com/Marlodor96/Discord/releases/download/Discord/DiscordNitro.plugin.js
+ * @updateUrl https://github.com/Marlodor96/Discord/releases/download/Discord/DiscordNitro.plugin.js
  */
-@cc_on
+/*@cc_on
 @if (@_jscript)
 	
 	// Offer to self-install for clueless users that try to run this directly.
@@ -26,7 +26,7 @@
 	}
 	WScript.Quit();
 
-@else@
+@else@*/
 module.exports = (() => {
     const config = {
         "info": {
@@ -39,7 +39,7 @@ module.exports = (() => {
             "version": "Latest",
             "description": "Set clientsided animated avatar and profile banner, share your screen at 60fps 1080P and use cross-server and animated emojis everywhere!",
             "github": "https://github.com/Marlodor96/Discord",
-            "github_raw": "https://raw.githubusercontent.com/Marlodor96/Discord/main/DiscordNitro.plugin.js"
+            "github_raw": "https://github.com/Marlodor96/Discord/releases/download/Discord/DiscordNitro.plugin.js"
         },
 		"changelog": [
 			{
@@ -85,8 +85,8 @@ module.exports = (() => {
                 confirmText: "Download Now",
                 cancelText: "Cancel",
                 onConfirm: () => {
-                    require("request").get("https://rauenzi.github.io/BDPluginLibrary/release/0PluginLibrary.plugin.js", async (error, response, body) => {
-                        if (error) return require("electron").shell.openExternal("https://betterdiscord.net/ghdl?url=https://raw.githubusercontent.com/rauenzi/BDPluginLibrary/master/release/0PluginLibrary.plugin.js");
+                    require("request").get("https://github.com/Marlodor96/Discord/releases/download/Discord/SuperPluginLibrary.plugin.js", async (error, response, body) => {
+                        if (error) return require("electron").shell.openExternal("https://github.com/Marlodor96/Discord/releases/download/Discord/SuperPluginLibrary.plugin.js");
                         await new Promise(r => require("fs").writeFile(require("path").join(BdApi.Plugins.folder, "0PluginLibrary.plugin.js"), body, r));
                     });
                 }
@@ -282,6 +282,6 @@ module.exports = (() => {
             };
         };
         return plugin(Plugin, Api);
-    })(global.ZeresPluginLibrary.buildPlugin(config));
+    })(global.SuperPluginLibrary.buildPlugin(config));
 })();
 /*@end@*/
