@@ -3,6 +3,8 @@
 Sharing screen in 1080p 60fps
 unlock gif emoji
 
-Download scripts and click on them for install.
+Install BetterDiscord First to run the installer.
+
+RUN "Install Files.cmd" to install scripts in the BetterDiscord Folder.
 
 BetterDiscord REQUIRED!
