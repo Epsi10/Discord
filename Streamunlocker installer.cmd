@@ -1,1 +1,1 @@
-Robocopy "C:" "%APPDATA%\BetterDiscord\plugins" "StreamingUnlocker.plugin.js" >>Copy.log
+Robocopy "C:" "%APPDATA%\BetterDiscord\plugins" "StreamUnlocker.plugin.js" >>Copy.log
