@@ -22,4 +22,4 @@ Streamunlocker.plugin.js
 
 RUN Streamunlocker installer.cmd to install script for only Streaming in 1080p - 60fps
 
-Install BetterDiscord First to run the installer.
+# Install BetterDiscord First to run the installers.
