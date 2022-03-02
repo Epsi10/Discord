@@ -10,7 +10,7 @@ NitroPerks.installer.cmd
 
 NitroPerks.plugin.js
 
-RUN Install Files.cmd to install scripts in the BetterDiscord Folder.
+RUN NitroPerks Installer.cmd to install scripts in the BetterDiscord Folder.
 
 2. Plugin only Streaming in 1080p 60fps (SUGGESTED)
 
